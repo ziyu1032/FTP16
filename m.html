@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Li &amp; Miao ICH Challenge · Mobile</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2326365e'/%3E%3Cpath d='M32 7 L53 32 L32 57 L11 32 Z' fill='none' stroke='%23f2b632' stroke-width='4'/%3E%3Cpath d='M32 17 L44 32 L32 47 L20 32 Z' fill='%23c94f43'/%3E%3Cpath d='M32 26 L38 32 L32 38 L26 32 Z' fill='%23faf3e3'/%3E%3C/svg%3E">
+<style>
+  :root{ --red:#a63a2b; --indigo:#26365e; --yellow:#f2b632; --cream:#faf3e3; --ink:#33261a; }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{
+    font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--cream); color:var(--ink); min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px;
+  }
+  .brocade{
+    position:fixed; left:0; right:0; height:14px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='14'%3E%3Crect width='84' height='14' fill='%2333261a'/%3E%3Cpath d='M21 1 L41 7 L21 13 L1 7 Z' fill='%23c94f43'/%3E%3Cpath d='M21 4.5 L30 7 L21 9.5 L12 7 Z' fill='%23f2b632'/%3E%3Cpath d='M63 1 L83 7 L63 13 L43 7 Z' fill='none' stroke='%23f2b632' stroke-width='1.6'/%3E%3Ccircle cx='63' cy='7' r='2.4' fill='%23faf3e3'/%3E%3C/svg%3E");
+    background-size:84px 14px; background-repeat:repeat-x; z-index:5;
+  }
+  .brocade.top{ top:0; } .brocade.bottom{ bottom:0; }
+  .card{
+    max-width:420px; width:100%; background:#fff; border:2px solid #d8c7a8; border-radius:16px;
+    box-shadow:4px 4px 0 rgba(51,38,26,.12); padding:26px 22px; text-align:center; position:relative;
+  }
+  .logo{ width:56px; height:56px; margin:0 auto 10px; display:block; }
+  h1{ font-size:21px; color:var(--red); margin-bottom:4px; }
+  .sub{ font-size:13px; color:#8a7a64; margin-bottom:20px; line-height:1.5; }
+  .btn{
+    display:block; width:100%; padding:13px 16px; margin-top:12px; border:none; border-radius:12px;
+    font-size:16.5px; font-weight:800; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg,#c94f43,#a63a2b); box-shadow:0 3px 0 #7d2a1f;
+    font-family:inherit;
+  }
+  .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #7d2a1f; }
+  .btn.green{ background:linear-gradient(135deg,#3d9960,#2c7a48); box-shadow:0 3px 0 #1f5c35; }
+  .btn.plain{ background:#fff; color:var(--indigo); border:2px solid var(--indigo); box-shadow:0 3px 0 #1a2745; }
+
+  /* 微信引导遮罩 */
+  #wxGuide{
+    position:fixed; inset:0; z-index:50; background:rgba(20,25,35,.92);
+    display:none; color:#fff; padding:20px;
+  }
+  #wxGuide.show{ display:flex; flex-direction:column; align-items:center; }
+  .arrow-box{ margin-top:8px; text-align:center; }
+  .dots{ font-size:44px; animation:pulse 1.2s ease-in-out infinite; display:inline-block; }
+  @keyframes pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.25);} }
+  .step{
+    margin-top:26px; max-width:360px; background:rgba(255,255,255,.10);
+    border:1.5px dashed rgba(255,255,255,.45); border-radius:14px; padding:16px 18px; text-align:left;
+  }
+  .step b{ color:var(--yellow); font-size:16px; }
+  .step p{ font-size:15px; line-height:1.75; margin-top:4px; }
+  .go{
+    margin-top:auto; margin-bottom:8px; width:100%; max-width:360px;
+    background:rgba(255,255,255,.14); border:1.5px solid rgba(255,255,255,.5);
+    color:#fff; border-radius:12px; padding:12px; font-size:14.5px; cursor:pointer; font-family:inherit;
+  }
+  .note{ font-size:12.5px; color:#b9ac97; margin-top:14px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="brocade top"></div>
+
+<div class="card" id="mainCard">
+  <svg class="logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#26365e"/><path d="M32 7 L53 32 L32 57 L11 32 Z" fill="none" stroke="#f2b632" stroke-width="4"/><path d="M32 17 L44 32 L32 47 L20 32 Z" fill="#c94f43"/><path d="M32 26 L38 32 L32 38 L26 32 Z" fill="#faf3e3"/></svg>
+  <h1>Li &amp; Miao ICH Challenge</h1>
+  <div class="sub">黎苗非遗大闯关 · Unit 4 Cultural Fusion<br>6 Levels · Words → Culture → Speaking</div>
+  <button class="btn" id="enterBtn">🚀 进入游戏 &nbsp;Enter Game</button>
+  <button class="btn green" id="wxStayBtn" style="display:none;">🎧 在微信中继续（发音可听，评分为自评）</button>
+  <div class="note" id="mainNote">建议使用系统浏览器（Chrome / Safari / Edge），可获得完整体验：<br>真人美音 · 录音自动评分</div>
+</div>
+
+<!-- 微信引导遮罩 -->
+<div id="wxGuide">
+  <div class="arrow-box">
+    <div class="dots">···</div>
+    <div style="font-size:34px; margin-top:-6px;">⤴</div>
+  </div>
+  <div class="step">
+    <b>第 1 步</b>
+    <p>点击右上角的「<b>···</b>」菜单按钮</p>
+  </div>
+  <div class="step">
+    <b>第 2 步</b>
+    <p>在菜单中选择「<b>在浏览器打开</b>」（部分手机显示为「在默认浏览器中打开」）</p>
+  </div>
+  <div class="step">
+    <b>为什么要这样？</b>
+    <p>微信内置浏览器会限制网页发音和录音识别。在系统浏览器中打开后，<b style="color:#fff;">真人美音发音和录音 AI 评分都能正常使用</b>。</p>
+  </div>
+  <button class="go" id="wxStay2">不方便切换？在微信中继续（发音可听，评分为自评）→</button>
+</div>
+
+<div class="brocade bottom"></div>
+
+<script>
+const IS_WX = /MicroMessenger/i.test(navigator.userAgent);
+const GAME_URL = "index.html";
+
+if(!IS_WX){
+  /* 普通浏览器：直接进入游戏 */
+  location.replace(GAME_URL);
+}else{
+  /* 微信：主界面点进入 → 弹出「在浏览器打开」引导 */
+  const guide = document.getElementById("wxGuide");
+  document.getElementById("wxStayBtn").style.display = "block";
+  document.getElementById("enterBtn").addEventListener("click", ()=>{
+    guide.classList.add("show");
+  });
+  function stayInWX(){ location.href = GAME_URL; }
+  document.getElementById("wxStayBtn").addEventListener("click", stayInWX);
+  document.getElementById("wxStay2").addEventListener("click", stayInWX);
+}
+</script>
+</body>
+</html>
