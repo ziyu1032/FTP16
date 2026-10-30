@@ -263,6 +263,12 @@
   .dot{ width:12px; height:12px; border:2px solid var(--ink); border-radius:50%; background:#fff;}
   .dot.done{ background:var(--green);}
   .dot.now{ background:var(--yellow);}
+  .wx-banner{
+    display:none; max-width:860px; margin:12px auto 0; padding:10px 14px;
+    background:#fff7e0; border:2px dashed #d8a520; border-radius:10px;
+    font-size:13.5px; line-height:1.7; color:#7a5b10;
+  }
+  .wx-banner b{ color:#a63a2b; }
   footer{ text-align:center; margin-top:34px; font-size:12.5px; color:#9a8a74;}
   /* 提交报告弹窗 */
   .modal-mask{
@@ -278,6 +284,10 @@
 </head>
 <body>
 <div class="brocade"></div>
+<div class="wx-banner" id="wxBanner">
+  📱 <b>微信模式</b>：发音可以正常收听 🎧；录音自动评分在微信中不可用，读完将改为<b>自评</b>。<br>
+  完整体验：点右上角「<b>···</b>」→ 选择「<b>在浏览器打开</b>」。
+</div>
 <div class="wrap">
 
   <!-- 开始页 -->
@@ -728,6 +738,28 @@ const readTotal = () => readScores.reduce((s,v)=>s+(v||0),0);
 const totalScore = () => (cnt[0]+cnt[1]+cnt[2])*10 + readTotal() + speakBest + shopBest;
 const MAX_SCORE = 13*10 + 12*10 + 9*10 + 5*READ_MAX + SPEAK_MAX + SHOP_MAX;
 
+/* ================= 微信兼容 ================= */
+const IS_WX = /MicroMessenger/i.test(navigator.userAgent);
+if(IS_WX){
+  /* 显示微信提示横幅 */
+  document.addEventListener("DOMContentLoaded", ()=>{ $("wxBanner").style.display = "block"; });
+  /* 音频解锁：iOS 微信需在 WeixinJSBridgeReady 后 load 一次；再配合首次触摸预解锁 */
+  function wxUnlock(){
+    try{
+      const keys = Object.keys(SENT_AUDIO||{});
+      const src = keys.length ? SENT_AUDIO[keys[0]] : null;
+      const a = new Audio(src);
+      a.muted = false; a.volume = 0.01;
+      a.load();
+      const p = a.play(); if(p && p.catch) p.catch(()=>{});
+      setTimeout(()=>{ try{ a.pause(); }catch(e){} }, 300);
+    }catch(e){}
+  }
+  if(window.WeixinJSBridge){ wxUnlock(); }
+  else{ document.addEventListener("WeixinJSBridgeReady", wxUnlock, false); }
+  document.addEventListener("touchstart", wxUnlock, {once:true, passive:true});
+}
+
 /* ================= 发音 ================= */
 const audioCache = {};
 function audioUrl(word){ return "https://dict.youdao.com/dictvoice?type=2&audio=" + encodeURIComponent(word); }
@@ -1033,7 +1065,9 @@ function startRec(btn, statusEl, maxSec, onDone){
   rec.cb = onDone; rec.maxMs = maxSec*1000; rec.target = btn;
   rec.sr = null; rec.media = null; rec.stream = null; rec.srError = "";
   btn.classList.add("recording"); btn.textContent = "⏹ Stop";
-  statusEl.textContent = "🎙 Allow the microphone if the browser asks…";
+  statusEl.textContent = IS_WX
+    ? "🎙 微信中无法自动识别评分，说完点 Stop 将改为自评（发音可正常收听）"
+    : "🎙 Allow the microphone if the browser asks…";
   rec.timer = setInterval(()=>{
     const s = Math.round((Date.now()-rec.t0)/1000);
     statusEl.textContent = "🔴 Recording… " + s + "s / " + maxSec + "s";
