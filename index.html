@@ -392,6 +392,9 @@
       </p>
     </div>
     <div id="readList"></div>
+    <div class="card" style="text-align:center; margin-top:14px;">
+      <button class="btn indigo" style="width:100%;" onclick="skipPart()">Next level · Part 5 · ICH Ambassador →</button>
+    </div>
   </section>
 
   <!-- 第 5 关：非遗推荐官 -->
@@ -430,6 +433,10 @@
         <span class="rec-status" id="spkStatus"></span>
       </div>
       <div class="score-box hidden" id="spkScoreBox"></div>
+
+      <div style="text-align:center; margin-top:18px;">
+        <button class="btn indigo" style="width:100%;" onclick="skipPart()">Next level · Part 6 · Miao Silver Shop →</button>
+      </div>
     </div>
   </section>
 
@@ -925,8 +932,10 @@ function answerP1(it, btn, chosen){
   $("qNext").classList.remove("hidden");
 }
 $("qNext").onclick = ()=>{
-  if(curPart === 0){ p1Idx++; renderP1(); }
-  else { qIdx++; renderQ(); }
+  if(curPart === 0){ p1Idx++; renderP1(); return; }
+  /* 已是本关最后一题：不能只做 qIdx++（会越界导致页面无反应），直接进入下一关 */
+  if(qIdx >= qList.length - 1){ skipPart(); return; }
+  qIdx++; renderQ();
 };
 function endPart1(timeout){
   clearInterval(p1Timer);
