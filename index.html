@@ -776,9 +776,17 @@ function show(id){
 }
 const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(p=>p[1]);
 /* 每次进入第2/3关时复制一份题目并随机打乱选项，正确答案下标随之更新 */
+/* 特殊：含 "All of the above" 的题（第三关最后一题）该选项固定为 D，只打乱其余三项 */
 function makeQL(src){
   return src.map(q=>{
-    const order = shuffle(q.o.map((_,i)=>i));
+    const allIdx = q.o.findIndex(t=>/^all of (the )?above$/i.test(t.trim()));
+    let order;
+    if(allIdx >= 0){
+      const rest = q.o.map((_,i)=>i).filter(i=>i !== allIdx);
+      order = shuffle(rest).concat(allIdx);   // "All of the above" 恒在最后（D）
+    } else {
+      order = shuffle(q.o.map((_,i)=>i));
+    }
     return Object.assign({}, q, { o: order.map(i=>q.o[i]), a: order.indexOf(q.a), _done:false, _wrong:false, _fb:"" });
   });
 }
