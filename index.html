@@ -127,6 +127,15 @@
   .feedback.ok{ display:block; background:#eaf5ea;}
   .feedback.no{ display:block; background:#fbeceb;}
   .feedback .zh{ color:#6b5b48; font-size:13.5px; margin-top:4px; display:block;}
+  /* 第二关答对后出现的额外知识点（中英对照），位于题目最下方 */
+  .kb-card{
+    margin-top:12px; border:2px dashed var(--indigo); border-radius:12px;
+    padding:12px 14px; background:#fbf8ef; line-height:1.6;
+  }
+  .kb-card.hidden{ display:none;}
+  .kb-card .kb-h{ font-weight:800; color:var(--indigo); font-size:14.5px; margin-bottom:6px;}
+  .kb-card .kb-en{ font-size:15px; color:var(--ink);}
+  .kb-card .kb-zh{ font-size:13.5px; color:#6b5b48; margin-top:5px;}
   .speak-btn{
     display:inline-flex; align-items:center; gap:6px; cursor:pointer;
     background:var(--yellow); border:2px solid var(--ink); border-radius:10px;
@@ -374,6 +383,7 @@
     <div class="prompt" id="qPrompt"></div>
     <div class="opts" id="qOpts"></div>
     <div class="feedback" id="qFb"></div>
+    <div class="kb-card hidden" id="qExtra"></div>
     <div class="center mt" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
       <button class="btn small indigo hidden" id="qPrev">← Previous question</button>
       <button class="btn green hidden" id="qNext">Next →</button>
@@ -598,29 +608,41 @@ const VOCAB = [
 
 const FILL = [
   {s:"Li brocade is woven from cotton and colored with natural ____.", o:["dyes","looms","rituals","motifs"], a:0,
-   exp:"Natural dyes — from the text: colored with natural dyes."},
+   exp:"Natural dyes — from the text: colored with natural dyes.",
+   kb:{en:"Natural dyes come from plants and minerals — for example, indigo (blue) and safflower (red).", zh:"天然染料来自植物和矿物，例如靛蓝（蓝色）和红花（红色）。"}},
   {s:"Li brocade features ____ patterns of legends and everyday life.", o:["ethnic","intricate","innovative","intangible"], a:1,
-   exp:"Intricate patterns = rich, finely detailed patterns."},
+   exp:"Intricate patterns = rich, finely detailed patterns.",
+   kb:{en:"\"Intricate\" means very detailed and finely made. A similar word is \"elaborate\".", zh:"intricate 意为“精细复杂的”；近义词 elaborate（精致繁复的）。"}},
   {s:"Weavers make brocade on a traditional ____.", o:["loom","dye","motif","ritual"], a:0,
-   exp:"A traditional loom is the tool for weaving."},
+   exp:"A traditional loom is the tool for weaving.",
+   kb:{en:"A loom is a frame that holds threads while a weaver turns them into cloth. Li brocade is woven on a traditional wooden loom.", zh:"织布机是用来固定纱线、把线织成布的工具；黎锦用传统木织机手工织造。"}},
   {s:"Miao ____ uses beeswax and indigo to make patterns.", o:["brocade","folk song","batik","loom"], a:2,
-   exp:"Miao batik uses beeswax and indigo."},
+   exp:"Miao batik uses beeswax and indigo.",
+   kb:{en:"Batik is a wax-resist dyeing method: artisans draw patterns with hot beeswax, then dye the cloth. The waxed parts keep their original color.", zh:"蜡染是一种防染工艺：艺人用热蜂蜡在布上画出图案，再染色，上蜡的部分保留原色。"}},
   {s:"Beeswax and indigo create distinctive ____ on the cloth.", o:["rituals","motifs","dyes","festivals"], a:1,
-   exp:"Distinctive motifs = special decorative patterns."},
+   exp:"Distinctive motifs = special decorative patterns.",
+   kb:{en:"A motif is a repeated decorative pattern. Miao batik often uses butterflies, spirals, and copper-drum designs.", zh:"motif 指反复出现的装饰纹样；苗族蜡染常见蝴蝶纹、漩涡纹和铜鼓纹。"}},
   {s:"The festival highlights the cultural ____ of Li and Miao communities.", o:["vitality","heritage","wisdom","dye"], a:0,
-   exp:"Cultural vitality — from the text: highlight cultural vitality."},
+   exp:"Cultural vitality — from the text: highlight cultural vitality.",
+   kb:{en:"\"Vitality\" means energy and the power to grow. \"Cultural vitality\" means a culture is still alive and developing.", zh:"vitality 意为“活力、生命力”；cultural vitality 指文化依然鲜活、有传承发展的力量。"}},
   {s:"At the festival, people sing orally transmitted ____ .", o:["folk songs","batiks","silvers","motifs"], a:0,
-   exp:"Orally transmitted = passed down by word of mouth."},
+   exp:"Orally transmitted = passed down by word of mouth.",
+   kb:{en:"\"Orally transmitted\" means passed down by word of mouth, not written down. Folk songs were learned by listening and singing.", zh:"orally transmitted 指“口头传承”，即靠口耳相传而非文字记录；民歌靠听和唱代代相传。"}},
   {s:"The Sanyuesan Festival also includes dances and ____ .", o:["looms","dyes","rituals","patterns"], a:2,
-   exp:"Rituals = traditional ceremonies."},
+   exp:"Rituals = traditional ceremonies.",
+   kb:{en:"The Sanyuesan Festival falls on the third day of the third lunar month, with singing, dancing, and traditional ceremonies.", zh:"三月三是农历三月初三，黎族、苗族会在这天对歌、跳舞、举行传统仪式。"}},
   {s:"Li brocade is a famous example of intangible cultural ____.", o:["vitality","heritage","communication","jewelry"], a:1,
-   exp:"Intangible cultural heritage (ICH) — the key phrase."},
+   exp:"Intangible cultural heritage (ICH) — the key phrase.",
+   kb:{en:"ICH stands for \"intangible cultural heritage\" — living skills, performances, and festivals, rather than physical objects. UNESCO is the United Nations agency for culture.", zh:"ICH 是“非物质文化遗产”的缩写，指活态的技艺、表演和节庆，而非实物；UNESCO 是联合国教科文组织。"}},
   {s:"Hainan is home to two ____ groups: the Li and the Miao.", o:["intricate","innovative","intangible","ethnic"], a:3,
-   exp:"Ethnic groups = people of the same culture."},
+   exp:"Ethnic groups = people of the same culture.",
+   kb:{en:"An \"ethnic group\" is a community with a shared culture and identity. Hainan is also home to the Han and other groups.", zh:"ethnic group 指有共同文化和身份认同的群体；海南还居住着汉族等其他民族。"}},
   {s:"Grandmothers teach girls to weave. This is called ____ .", o:["innovative communication","intergenerational teaching","folk song","natural dyeing"], a:1,
-   exp:"Intergenerational teaching: the old teach the young."},
+   exp:"Intergenerational teaching: the old teach the young.",
+   kb:{en:"The prefix \"inter-\" means \"between\": inter-generational = between generations. Grandmothers teaching girls to weave is a living example.", zh:"前缀 inter- 表示“在……之间”，intergenerational 即“代际的”；奶奶教女孩织锦就是鲜活的例子。"}},
   {s:"Promoting ICH through short videos and livestreams is a kind of ____ .", o:["intergenerational teaching","intricate weaving","innovative communication","ritual"], a:2,
-   exp:"Innovative communication: promoting culture through new media."}
+   exp:"Innovative communication: promoting culture through new media.",
+   kb:{en:"\"Innovative\" means new and creative. Short videos and livestreams bring Li-Miao culture to a global audience in a modern way.", zh:"innovative 意为“创新的”；短视频和直播用现代方式把黎苗文化传播给全球观众。"}}
 ];
 
 /* 第二关整句发音（Edge 神经网络美式发音，本地内联，离线可用） */
@@ -992,7 +1014,9 @@ function renderQ(){
     b.onclick = ()=> answerQ(q, b, i);
     box.appendChild(b);
   });
+  $("qExtra").classList.add("hidden"); $("qExtra").innerHTML = "";   // 未答对前不显示拓展知识点
   if(q._done){                              // 返回已答题：还原反馈
+    fillExtra(q);                           // 还原中英文拓展知识点
     $("qFb").className = q._fbClass || "feedback ok";
     $("qFb").innerHTML = q._fbHtml || "🎉 Correct! +10 pts";
     $("qNext").classList.remove("hidden");
@@ -1006,6 +1030,16 @@ function renderQ(){
   clearInterval(qTimer);
   $("timerTrack").style.display = "none";
   $("qTimerLabel").style.display = "none";
+}
+/* 第二关答对后在题目最下方显示中英文拓展知识点；其它关卡或无数据时隐藏 */
+function fillExtra(q){
+  const ex = $("qExtra");
+  ex.innerHTML = "";
+  if(curPart !== 1 || !q.kb){ ex.classList.add("hidden"); return; }
+  ex.innerHTML = '<div class="kb-h">💡 More to know · 拓展知识点</div>' +
+    '<div class="kb-en">' + q.kb.en + '</div>' +
+    '<div class="kb-zh">' + q.kb.zh + '</div>';
+  ex.classList.remove("hidden");
 }
 function fullSentence(q){
   let s = q.s.replace(/\([^)]*[\u4e00-\u9fa5][^)]*\)/g,"").replace(/（[^）]*）/g,"");
@@ -1043,6 +1077,7 @@ function answerQ(q, btn, idx){
     fb.innerHTML = '🎉 Correct! +10 pts<span class="zh">' + q.exp + '</span>';
   }
   q._fbClass = fb.className; q._fbHtml = fb.innerHTML;   // 供返回本题时还原
+  if(curPart === 1) fillExtra(q);                        // 答对后显示拓展知识点
   $("qScore").textContent = "⭐ " + totalScore();
   $("qNext").classList.remove("hidden");
 }
