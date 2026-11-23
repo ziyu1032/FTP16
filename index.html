@@ -118,6 +118,7 @@
   .opt.correct{ background:#d9efd9; border-color:var(--green); box-shadow:3px 3px 0 var(--green);}
   .opt.wrong{ background:#f7d9d5; border-color:var(--red); box-shadow:3px 3px 0 var(--red);}
   .opt:disabled{ cursor:default; transform:none;}
+  .opt .opt-k{ display:inline-block; font-weight:800; color:var(--red); margin-right:7px; min-width:1.1em;}
 
   .feedback{
     margin-top:14px; border:var(--line); border-radius:12px; padding:12px 14px;
@@ -355,7 +356,8 @@
     <div class="prompt" id="qPrompt"></div>
     <div class="opts" id="qOpts"></div>
     <div class="feedback" id="qFb"></div>
-    <div class="center mt">
+    <div class="center mt" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="btn small indigo hidden" id="qPrev">← Previous question</button>
       <button class="btn green hidden" id="qNext">Next →</button>
     </div>
   </section>
@@ -741,6 +743,14 @@ function show(id){
   window.scrollTo({top:0});
 }
 const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(p=>p[1]);
+/* 每次进入第2/3关时复制一份题目并随机打乱选项，正确答案下标随之更新 */
+function makeQL(src){
+  return src.map(q=>{
+    const order = shuffle(q.o.map((_,i)=>i));
+    return Object.assign({}, q, { o: order.map(i=>q.o[i]), a: order.indexOf(q.a), _done:false, _wrong:false, _fb:"" });
+  });
+}
+const optKey = i => "ABCD"[i] + ".";
 const readTotal = () => readScores.reduce((s,v)=>s+(v||0),0);
 const totalScore = () => (cnt[0]+cnt[1]+cnt[2])*10 + readTotal() + speakBest + shopBest;
 const MAX_SCORE = 13*10 + 12*10 + 9*10 + 5*READ_MAX + SPEAK_MAX + SHOP_MAX;
@@ -824,8 +834,8 @@ function startPart(i){
 function enterPart(i){
   curPart = i; clearTimers(); stopAllRec();
   if(i === 0){ show("screen-quiz"); startPart1(); }
-  else if(i === 1){ show("screen-quiz"); qList = FILL; qIdx = 0; renderQ(); }
-  else if(i === 2){ show("screen-quiz"); qList = COMP_FLAT; qIdx = 0; renderQ(); }
+  else if(i === 1){ show("screen-quiz"); qList = makeQL(FILL); qIdx = 0; renderQ(); }
+  else if(i === 2){ show("screen-quiz"); qList = makeQL(COMP_FLAT); qIdx = 0; renderQ(); }
   else if(i === 3){ show("screen-read"); renderRead(); }
   else if(i === 4){ show("screen-speak"); renderSpeak(); }
   else { show("screen-shop"); renderShop(); }
@@ -896,6 +906,7 @@ function renderP1(){
     box.appendChild(b);
   });
   $("qFb").className = "feedback"; $("qFb").innerHTML = "";
+  $("qPrev").classList.add("hidden");
   $("qNext").classList.add("hidden");
   $("qNext").textContent = (p1Idx === p1List.length-1) ? "See result →" : "Next →";
 }
@@ -937,6 +948,10 @@ $("qNext").onclick = ()=>{
   if(qIdx >= qList.length - 1){ skipPart(); return; }
   qIdx++; renderQ();
 };
+$("qPrev").onclick = ()=>{
+  if(curPart === 0) return;
+  if(qIdx > 0){ qIdx--; renderQ(); }
+};
 function endPart1(timeout){
   clearInterval(p1Timer);
   const used = Math.min(PART1_TIME, Math.round(PART1_TIME - Math.max(0,(p1End - Date.now()))/1000));
@@ -951,9 +966,9 @@ function endPart1(timeout){
 
 /* ================= 第 2 / 3 关 ================= */
 function renderQ(){
-  locked = false;
   const q = qList[qIdx];
   if(!q) return;
+  locked = !!q._done;                       // 已答对的题返回时保持锁定，避免重复加分
   $("qPart").textContent = (curPart === 2 && q.stage ? q.stage.split("·")[0].trim() : "Part " + (curPart+1)) +
                            "  Q" + (qIdx+1) + "/" + qList.length;
   $("qScore").textContent = "⭐ " + totalScore();
@@ -962,12 +977,20 @@ function renderQ(){
   const box = $("qOpts"); box.innerHTML = "";
   q.o.forEach((t,i)=>{
     const b = document.createElement("button");
-    b.className = "opt"; b.textContent = t;
+    b.className = "opt"; b.textContent = optKey(i) + "  " + t;
+    if(q._done){ b.disabled = true; if(i === q.a) b.classList.add("correct"); }
     b.onclick = ()=> answerQ(q, b, i);
     box.appendChild(b);
   });
-  $("qFb").className = "feedback"; $("qFb").innerHTML = "";
-  $("qNext").classList.add("hidden");
+  if(q._done){                              // 返回已答题：还原反馈
+    $("qFb").className = q._fbClass || "feedback ok";
+    $("qFb").innerHTML = q._fbHtml || "🎉 Correct! +10 pts";
+    $("qNext").classList.remove("hidden");
+  } else {
+    $("qFb").className = "feedback"; $("qFb").innerHTML = "";
+    $("qNext").classList.add("hidden");
+  }
+  $("qPrev").classList.toggle("hidden", qIdx === 0);   // 第一题无上一题
   $("qNext").textContent = (qIdx === qList.length-1) ? (curPart === 1 ? "Go to Part 3 →" : "Go to Part 4 · Reading →") : "Next →";
 
   clearInterval(qTimer);
@@ -981,7 +1004,7 @@ function fullSentence(q){
   return s;
 }
 function answerQ(q, btn, idx){
-  if(locked) return;
+  if(locked || q._done) return;
   if(idx !== q.a){
     q.wrongTried = true;
     btn.classList.add("wrong"); btn.disabled = true;
@@ -993,7 +1016,7 @@ function answerQ(q, btn, idx){
         : 'Go back to the text — what does this paragraph say?') + '</span>';
     return;
   }
-  locked = true; cnt[curPart]++;
+  locked = true; q._done = true; cnt[curPart]++;
   if(q.wrongTried) review.push({q:q.s.slice(0,90), right:q.o[q.a], exp:q.exp + " (retried)"});
   [...$("qOpts").children].forEach((b,i)=>{
     b.disabled = true;
@@ -1009,6 +1032,7 @@ function answerQ(q, btn, idx){
   } else {
     fb.innerHTML = '🎉 Correct! +10 pts<span class="zh">' + q.exp + '</span>';
   }
+  q._fbClass = fb.className; q._fbHtml = fb.innerHTML;   // 供返回本题时还原
   $("qScore").textContent = "⭐ " + totalScore();
   $("qNext").classList.remove("hidden");
 }
