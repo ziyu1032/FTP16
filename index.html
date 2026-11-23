@@ -211,6 +211,12 @@
     font-size:13.5px; font-weight:700; box-shadow:2px 2px 0 rgba(51,38,26,.7);
   }
   .word i{ font-weight:500; color:#7a6a55; font-style:normal; font-size:12px;}
+  /* 词库中文释义：默认隐藏，点 Show meanings 才显示（词义紧扣苗银店铺语境） */
+  .word .wmean{ display:none; }
+  #chWords.show-mean .word .wmean{
+    display:block; font-style:normal; font-weight:600; font-size:12.5px;
+    color:var(--indigo-dk); margin-top:2px; line-height:1.3;
+  }
   .word.pick{ cursor:pointer; user-select:none; transition:transform .08s;}
   .word.pick:hover{ transform:translateY(-2px);}
   .word.pick.picked{ background:#fdf1d7; border-color:var(--yellow); box-shadow:3px 3px 0 var(--yellow);}
@@ -481,40 +487,32 @@
         </div>
       </div>
 
-      <div class="fact">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-          <b>📖 Facts</b>
-          <button class="btn small" id="chZhBtn" onclick="toggleChZh()">👀 Chinese</button>
-        </div>
-        <div id="chFactsEn" style="margin-top:8px;">
-          Miao silver jewelry（苗族银饰）is <b>handcrafted</b>（手工制作）by Miao <b>artisans</b>（手艺人）.<br>
-          Artisans use <b>filigree</b>（花丝）and <b>inlay</b>（镶嵌）techniques.<br>
-          Silver jewelry <b>symbolizes</b>（象征）<b>prosperity</b>（富足）and <b>protection</b>（护佑）.<br>
-          It is an important part of traditional Miao culture and a symbol of <b>ethnic identity</b>（民族身份）.<br>
-          Today, artisans <b>inherit</b>（传承）the <b>craftsmanship</b>（工艺）and <b>promote</b>（推广）it on the global stage.
-        </div>
-        <div id="chFactsZh" class="hidden" style="margin-top:10px; padding-top:10px; border-top:2px dashed var(--indigo); color:#4a5568;">
-          苗族银饰由苗族匠人手工制作。<br>
-          匠人使用花丝与镶嵌工艺。<br>
-          银饰象征富足与护佑。<br>
-          它是苗族传统文化的重要组成部分，也是民族身份的象征。<br>
-          今天，匠人传承这门手艺，并把它推广到世界舞台。
-        </div>
-      </div>
-
       <div class="frame show" style="margin-top:16px;">
         <b>Step 1 · Tap a blank first, then choose a word for it.</b>
         <span style="font-size:13px; color:#6b5b48;">(Tap a blank to select it, then tap a word to fill it — keep trying until it fits. No answers given.)</span>
         <div class="pattern-list" id="chPatterns"></div>
         <div class="bank" style="margin-top:14px;">
-          <div class="ttl">💡 Word Bank — tap a blank first, then tap a word</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span class="ttl" style="margin-bottom:8px;">💡 Word Bank — tap a blank first, then tap a word</span>
+            <button class="btn small" id="chMeanBtn" onclick="toggleChMean()">👀 Show meanings</button>
+          </div>
           <div class="words" id="chWords"></div>
         </div>
         <div id="chWordFb" style="margin-top:10px; font-size:13.5px; font-weight:800;"></div>
       </div>
 
+      <!-- 完成后：把六句话合成一段，供学生看着朗读/录音 -->
+      <div class="frame" id="shopParaPanel" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+          <b>📄 Your paragraph — read it aloud while recording</b>
+          <button class="speak-btn" id="shopParaSpeak" onclick="speakShopPara()">🔊 Listen</button>
+        </div>
+        <p class="read-text" id="shopParaText"></p>
+      </div>
+
       <div class="row mt" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <button class="rec-btn" id="shopRec" onclick="toggleShopRec()" disabled>🔒 Fill the blanks first</button>
+        <button class="btn small indigo hidden" id="shopParaBtn" onclick="showShopPara()">📄 Make a paragraph to read</button>
         <button class="btn small yellow" id="shopDirect" onclick="shopDirectSpeak()">🚀 Speak directly (skip fill-in)</button>
         <span class="rec-status" id="shopStatus"></span>
       </div>
@@ -1492,12 +1490,36 @@ function doSubmit(){ closeSubmit(); finishGame(); }
 let chPick = [], chArmed = null, chFill = 0, chDone = false;
 const shopBlankTotal = SHOP_PATTERNS.reduce((n,p)=>n+p.filter(x=>Array.isArray(x)).length, 0);
 
-function toggleChZh(){
-  const zh = $("chFactsZh"), btn = $("chZhBtn");
-  const on = zh.classList.contains("hidden");
-  zh.classList.toggle("hidden", !on);
-  btn.textContent = on ? "🙈 Hide Chinese" : "👀 Chinese";
+/* 词库中文释义：紧扣苗银店铺文段语境，点按钮显示/隐藏 */
+const SHOP_MEAN = {
+  handcrafted:"手工制作的", artisans:"手艺人；工匠", necklace:"银项圈；项链",
+  butterflies:"蝴蝶（纹样）", bells:"铃铛", filigree:"花丝（工艺）", inlay:"镶嵌（工艺）",
+  prosperity:"富足；兴旺", protection:"护佑；辟邪", "ethnic identity":"民族身份",
+  gift:"礼物", "try it on":"试戴",
+  beeswax:"蜂蜡（蜡染用）", indigo:"靛蓝（染料）", loom:"织布机",
+  "folk songs":"民歌", cotton:"棉花", dyes:"染料"
+};
+let chMeanOn = false;
+function toggleChMean(){
+  chMeanOn = !chMeanOn;
+  $("chWords").classList.toggle("show-mean", chMeanOn);
+  $("chMeanBtn").textContent = chMeanOn ? "🙈 Hide meanings" : "👀 Show meanings";
 }
+
+/* 把六句话连成一段完整小短文，供学生看着朗读/录音 */
+function shopParagraph(){
+  return SHOP_PATTERNS.map(p=>
+    p.map(seg=> Array.isArray(seg) ? seg[0] : seg).join("")
+  ).join(" ").replace(/\s+([.,!?])/g,"$1").replace(/\s{2,}/g," ").trim();
+}
+function showShopPara(){
+  const panel = $("shopParaPanel");
+  $("shopParaText").textContent = shopParagraph();
+  panel.classList.add("show");
+  $("shopParaBtn").classList.add("hidden");
+  panel.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+function speakShopPara(){ ttsFallback(shopParagraph()); }
 
 function renderShop(){
   $("shopImg").src = SILVER_IMG;
@@ -1518,7 +1540,8 @@ function renderShop(){
   });
 
   $("chWords").innerHTML = chPick.map((x,i)=>
-    '<span class="word pick" data-i="' + i + '">' + x.w + '</span>').join("");
+    '<span class="word pick" data-i="' + i + '">' + x.w +
+    '<i class="wmean">' + (SHOP_MEAN[x.w] || "") + '</i></span>').join("");
   [...$("chWords").children].forEach((el,i)=> el.onclick = ()=> fillChWord(i));
 
   const fb = $("chWordFb"); fb.style.color = "";
@@ -1533,8 +1556,12 @@ function renderShop(){
 
   const b = $("shopScoreBox"); b.classList.add("hidden"); b.innerHTML = "";
   $("shopScoreTop").textContent = "⭐ " + shopBest;
-  $("chFactsZh").classList.add("hidden");
-  $("chZhBtn").textContent = "👀 Chinese";
+  /* 重置词义开关、段落按钮与段落面板 */
+  chMeanOn = false;
+  $("chWords").classList.remove("show-mean");
+  $("chMeanBtn").textContent = "👀 Show meanings";
+  $("shopParaBtn").classList.add("hidden");
+  $("shopParaPanel").classList.remove("show");
 }
 
 /* 先点横线空格：选中（变黄）；再点同一个空格不会取消，避免误触 */
@@ -1589,10 +1616,11 @@ function fillChWord(i){
   }
   chDone = true;
   fb.style.color = "var(--green)";
-  fb.textContent = "🎉 All patterns are done! Now sell the jewelry and record.";
+  fb.textContent = "🎉 All patterns are done! Make a paragraph to read, then record.";
   const rb = $("shopRec");
   rb.disabled = false; rb.classList.remove("locked");
   rb.textContent = "🎤 Start recording";
+  $("shopParaBtn").classList.remove("hidden");
 }
 
 function toggleShopRec(){
@@ -1615,6 +1643,7 @@ function shopDirectSpeak(){
   $("shopStatus").textContent = "";
   const db = $("shopDirect");
   db.disabled = true; db.style.opacity = ".5"; db.style.cursor = "not-allowed";
+  $("shopParaBtn").classList.remove("hidden");
 }
 
 /* ================= 结算 ================= */
